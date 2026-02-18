@@ -1,5 +1,5 @@
-import { Toaster } from 'react-hot-toast';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 import { FileUploader } from './components/DataImport/FileUploader';
 import { PercentageSplit } from './components/PercentageManager/PercentageSplit';
 import { BellCurveChart } from './components/BellCurve/BellCurveChart';
@@ -8,6 +8,8 @@ import { EmployeeTable } from './components/EmployeeTable/EmployeeTable';
 import { useEmployeeStore } from './store/useEmployeeStore';
 import { usePercentageStore } from './store/usePercentageStore';
 import { useThemeStore } from './store/useThemeStore';
+import { useAuthStore } from './store/useAuthStore';
+import { downloadSampleTemplate } from './lib/generators/templateGenerator';
 import clsx from 'clsx';
 
 function App() {
@@ -15,6 +17,9 @@ function App() {
   const resetToDefault = usePercentageStore((state) => state.resetToDefault);
   const theme = useThemeStore((state) => state.theme);
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+  const navigate = useNavigate();
   const isDark = theme === 'dark';
 
   const handleReset = () => {
@@ -25,10 +30,13 @@ function App() {
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   return (
     <div className={clsx('min-h-screen transition-colors', isDark ? 'bg-slate-900' : 'bg-gray-100')}>
-      <Toaster position="top-right" />
-
       {/* Header */}
       <header className={clsx(
         'shadow-lg border-b',
@@ -45,6 +53,29 @@ function App() {
               </p>
             </div>
             <div className="flex items-center gap-3">
+              {/* User info */}
+              <span className={clsx('text-sm font-medium', isDark ? 'text-slate-300' : 'text-gray-600')}>
+                {user?.username}
+                {user?.role === 'admin' && (
+                  <span className="ml-1.5 text-xs px-1.5 py-0.5 rounded bg-amber-600 text-white">Admin</span>
+                )}
+              </span>
+
+              {/* Admin Panel Link */}
+              {user?.role === 'admin' && (
+                <button
+                  onClick={() => navigate('/admin')}
+                  className={clsx(
+                    'px-3 py-2 rounded-lg transition-colors border text-sm font-medium',
+                    isDark
+                      ? 'bg-slate-700 hover:bg-slate-600 text-amber-300 border-slate-600'
+                      : 'bg-gray-100 hover:bg-gray-200 text-amber-700 border-gray-300'
+                  )}
+                >
+                  Admin Panel
+                </button>
+              )}
+
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
@@ -67,11 +98,25 @@ function App() {
                 )}
                 {isDark ? 'Light' : 'Dark'}
               </button>
+
               <button
                 onClick={handleReset}
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors shadow-lg border border-red-500"
               >
                 Reset All Data
+              </button>
+
+              {/* Logout */}
+              <button
+                onClick={handleLogout}
+                className={clsx(
+                  'px-3 py-2 rounded-lg transition-colors border text-sm font-medium',
+                  isDark
+                    ? 'bg-slate-700 hover:bg-slate-600 text-slate-300 border-slate-600'
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300'
+                )}
+              >
+                Logout
               </button>
             </div>
           </div>
@@ -84,9 +129,25 @@ function App() {
           {/* File Uploader and Target Distribution Side by Side */}
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
-              <h2 className={clsx('text-lg font-semibold mb-3', isDark ? 'text-cyan-400' : 'text-cyan-700')}>
-                Import Employee Data
-              </h2>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className={clsx('text-lg font-semibold', isDark ? 'text-cyan-400' : 'text-cyan-700')}>
+                  Import Employee Data
+                </h2>
+                <button
+                  onClick={downloadSampleTemplate}
+                  className={clsx(
+                    'px-3 py-1.5 text-sm font-medium rounded-lg transition-colors border flex items-center gap-2',
+                    isDark
+                      ? 'bg-slate-700 hover:bg-slate-600 text-cyan-300 border-slate-600'
+                      : 'bg-gray-100 hover:bg-gray-200 text-cyan-700 border-gray-300'
+                  )}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Download Sample Template
+                </button>
+              </div>
               <FileUploader />
             </div>
             <div>

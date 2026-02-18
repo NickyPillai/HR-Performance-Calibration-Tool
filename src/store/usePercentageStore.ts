@@ -1,12 +1,13 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { type PercentageSplit, DEFAULT_PERCENTAGES, DEVIATION_THRESHOLD, type Rating } from '../types/rating';
+import { apiClient } from '../lib/api/client';
 
 interface PercentageState {
   targetPercentages: PercentageSplit;
   deviationThreshold: number;
 
   // Actions
+  fetchSettings: () => Promise<void>;
   updateTargetPercentage: (rating: Rating, percentage: number) => void;
   setTargetPercentages: (percentages: PercentageSplit) => void;
   setDeviationThreshold: (threshold: number) => void;
@@ -18,50 +19,65 @@ interface PercentageState {
 }
 
 export const usePercentageStore = create<PercentageState>()(
-  persist(
-    (set, get) => ({
-      targetPercentages: DEFAULT_PERCENTAGES,
-      deviationThreshold: DEVIATION_THRESHOLD,
+  (set, get) => ({
+    targetPercentages: DEFAULT_PERCENTAGES,
+    deviationThreshold: DEVIATION_THRESHOLD,
 
-      updateTargetPercentage: (rating: Rating, percentage: number) => {
-        set((state) => ({
-          targetPercentages: {
-            ...state.targetPercentages,
-            [`rating${rating}`]: percentage,
-          },
-        }));
-      },
+    fetchSettings: async () => {
+      try {
+        const settings = await apiClient.getSettings();
+        set({
+          targetPercentages: settings.targetPercentages,
+          deviationThreshold: settings.deviationThreshold,
+        });
+      } catch {
+        // Keep defaults on failure
+      }
+    },
 
-      setTargetPercentages: (percentages: PercentageSplit) => {
-        set({ targetPercentages: percentages });
-      },
+    updateTargetPercentage: (rating: Rating, percentage: number) => {
+      set((state) => {
+        const newPercentages = {
+          ...state.targetPercentages,
+          [`rating${rating}`]: percentage,
+        };
+        apiClient.updateSettings({ targetPercentages: newPercentages }).catch(() => {});
+        return { targetPercentages: newPercentages };
+      });
+    },
 
-      setDeviationThreshold: (threshold: number) => {
-        set({ deviationThreshold: threshold });
-      },
+    setTargetPercentages: (percentages: PercentageSplit) => {
+      set({ targetPercentages: percentages });
+      apiClient.updateSettings({ targetPercentages: percentages }).catch(() => {});
+    },
 
-      resetToDefault: () => {
-        set({ targetPercentages: DEFAULT_PERCENTAGES, deviationThreshold: DEVIATION_THRESHOLD });
-      },
+    setDeviationThreshold: (threshold: number) => {
+      set({ deviationThreshold: threshold });
+      apiClient.updateSettings({ deviationThreshold: threshold }).catch(() => {});
+    },
 
-      isValid: () => {
-        const sum = get().getSum();
-        return sum === 100;
-      },
+    resetToDefault: () => {
+      set({ targetPercentages: DEFAULT_PERCENTAGES, deviationThreshold: DEVIATION_THRESHOLD });
+      apiClient.updateSettings({
+        targetPercentages: DEFAULT_PERCENTAGES,
+        deviationThreshold: DEVIATION_THRESHOLD,
+      }).catch(() => {});
+    },
 
-      getSum: () => {
-        const percentages = get().targetPercentages;
-        return (
-          percentages.rating1 +
-          percentages.rating2 +
-          percentages.rating3 +
-          percentages.rating4 +
-          percentages.rating5
-        );
-      },
-    }),
-    {
-      name: 'hr-calibration-percentages',
-    }
-  )
+    isValid: () => {
+      const sum = get().getSum();
+      return sum === 100;
+    },
+
+    getSum: () => {
+      const percentages = get().targetPercentages;
+      return (
+        percentages.rating1 +
+        percentages.rating2 +
+        percentages.rating3 +
+        percentages.rating4 +
+        percentages.rating5
+      );
+    },
+  })
 );

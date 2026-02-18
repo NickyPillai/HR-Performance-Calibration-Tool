@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { apiClient } from '../lib/api/client';
 
 type Theme = 'dark' | 'light';
 
@@ -10,13 +10,14 @@ interface ThemeState {
 }
 
 export const useThemeStore = create<ThemeState>()(
-  persist(
-    (set) => ({
-      theme: 'dark',
-      toggleTheme: () =>
-        set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
-      setTheme: (theme) => set({ theme }),
-    }),
-    { name: 'hr-calibration-theme' }
-  )
+  (set) => ({
+    theme: 'dark',
+    toggleTheme: () =>
+      set((state) => {
+        const newTheme = state.theme === 'dark' ? 'light' : 'dark';
+        apiClient.updateSettings({ theme: newTheme }).catch(() => {});
+        return { theme: newTheme };
+      }),
+    setTheme: (theme) => set({ theme }),
+  })
 );

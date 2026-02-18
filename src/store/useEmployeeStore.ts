@@ -1,12 +1,14 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import type { Employee, ImportedEmployee, EmployeeUpdate } from '../types/employee';
 import type { Rating } from '../types/rating';
+import { apiClient } from '../lib/api/client';
 
 interface EmployeeState {
   employees: Employee[];
+  isLoading: boolean;
 
   // Actions
+  fetchEmployees: () => Promise<void>;
   setEmployees: (employees: Employee[]) => void;
   addEmployee: (employee: Employee) => void;
   updateEmployee: (id: string, updates: EmployeeUpdate) => void;
@@ -19,76 +21,82 @@ interface EmployeeState {
   getEmployeesByRating: (rating: Rating) => Employee[];
 }
 
-// Helper to generate UUID
-const generateId = (): string => {
-  return crypto.randomUUID();
-};
-
 export const useEmployeeStore = create<EmployeeState>()(
-  persist(
-    (set, get) => ({
-      employees: [],
+  (set, get) => ({
+    employees: [],
+    isLoading: false,
 
-      setEmployees: (employees: Employee[]) => {
-        set({ employees });
-      },
+    fetchEmployees: async () => {
+      set({ isLoading: true });
+      try {
+        const { employees } = await apiClient.getEmployees();
+        set({ employees, isLoading: false });
+      } catch {
+        set({ isLoading: false });
+      }
+    },
 
-      addEmployee: (employee: Employee) => {
-        set((state) => ({
-          employees: [...state.employees, employee],
-        }));
-      },
+    setEmployees: (employees: Employee[]) => {
+      set({ employees });
+    },
 
-      updateEmployee: (id: string, updates: EmployeeUpdate) => {
-        set((state) => ({
-          employees: state.employees.map((emp) =>
-            emp.id === id && !emp.isFrozen
-              ? {
-                  ...emp,
-                  ...updates,
-                }
-              : emp
-          ),
-        }));
-      },
+    addEmployee: (employee: Employee) => {
+      set((state) => ({
+        employees: [...state.employees, employee],
+      }));
+    },
 
-      bulkImport: (importedEmployees: ImportedEmployee[]) => {
-        const newEmployees: Employee[] = importedEmployees.map((emp) => ({
-          id: generateId(),
-          employeeId: emp.employeeId,
-          name: emp.name,
-          department: emp.department,
-          manager: emp.manager,
-          rating: emp.rating,
-          isFrozen: false,
-        }));
+    updateEmployee: async (id: string, updates: EmployeeUpdate) => {
+      // Optimistic update
+      set((state) => ({
+        employees: state.employees.map((emp) =>
+          emp.id === id && !emp.isFrozen ? { ...emp, ...updates } : emp
+        ),
+      }));
 
-        set({ employees: newEmployees });
-      },
+      try {
+        await apiClient.updateEmployee(id, updates);
+      } catch {
+        get().fetchEmployees();
+      }
+    },
 
-      toggleFreeze: (id: string) => {
-        set((state) => ({
-          employees: state.employees.map((emp) =>
-            emp.id === id ? { ...emp, isFrozen: !emp.isFrozen } : emp
-          ),
-        }));
-      },
+    bulkImport: async (importedEmployees: ImportedEmployee[]) => {
+      const { employees } = await apiClient.bulkImportEmployees(importedEmployees);
+      set({ employees });
+    },
 
-      clearAll: () => {
-        set({ employees: [] });
-      },
+    toggleFreeze: async (id: string) => {
+      // Optimistic update
+      set((state) => ({
+        employees: state.employees.map((emp) =>
+          emp.id === id ? { ...emp, isFrozen: !emp.isFrozen } : emp
+        ),
+      }));
 
-      // Selectors
-      getEmployeeById: (id: string) => {
-        return get().employees.find((emp) => emp.id === id);
-      },
+      try {
+        await apiClient.toggleFreezeEmployee(id);
+      } catch {
+        get().fetchEmployees();
+      }
+    },
 
-      getEmployeesByRating: (rating: Rating) => {
-        return get().employees.filter((emp) => emp.rating === rating);
-      },
-    }),
-    {
-      name: 'hr-calibration-employees',
-    }
-  )
+    clearAll: async () => {
+      set({ employees: [] });
+      try {
+        await apiClient.deleteAllEmployees();
+      } catch {
+        get().fetchEmployees();
+      }
+    },
+
+    // Selectors
+    getEmployeeById: (id: string) => {
+      return get().employees.find((emp) => emp.id === id);
+    },
+
+    getEmployeesByRating: (rating: Rating) => {
+      return get().employees.filter((emp) => emp.rating === rating);
+    },
+  })
 );
