@@ -113,7 +113,7 @@ export function EmployeeTable() {
   if (employees.length === 0) {
     return (
       <div className={clsx(
-        'rounded-lg shadow-lg border p-8 text-center',
+        'rounded-lg shadow-lg border p-6 text-center',
         isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'
       )}>
         <p className={isDark ? 'text-slate-400' : 'text-gray-500'}>
@@ -129,7 +129,7 @@ export function EmployeeTable() {
       isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'
     )}>
       <div className={clsx(
-        'px-6 py-4 border-b',
+        'px-4 py-3 border-b',
         isDark ? 'border-slate-700' : 'border-gray-200'
       )}>
         <div className="flex items-center justify-between mb-4">
@@ -212,7 +212,7 @@ export function EmployeeTable() {
       {/* Pagination Controls */}
       {filteredEmployees.length > 0 && (
         <div className={clsx(
-          'px-6 py-3 border-t flex items-center justify-between',
+          'px-4 py-2 border-t flex items-center justify-between',
           isDark ? 'border-slate-700 bg-slate-900' : 'border-gray-200 bg-gray-50'
         )}>
           <div className="flex items-center gap-3">

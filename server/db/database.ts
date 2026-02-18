@@ -50,6 +50,19 @@ export async function initializeDatabase(): Promise<void> {
     );
 
     CREATE INDEX IF NOT EXISTS idx_employees_user_id ON employees(user_id);
+
+    CREATE TABLE IF NOT EXISTS saved_datasets (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      employees TEXT NOT NULL,
+      settings TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE (user_id, name),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_saved_datasets_user_id ON saved_datasets(user_id);
   `);
 
   console.log('Database tables initialized');

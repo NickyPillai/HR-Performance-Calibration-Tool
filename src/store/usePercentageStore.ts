@@ -12,6 +12,7 @@ interface PercentageState {
   setTargetPercentages: (percentages: PercentageSplit) => void;
   setDeviationThreshold: (threshold: number) => void;
   resetToDefault: () => void;
+  loadFromDataset: (percentages: PercentageSplit, threshold: number) => void;
 
   // Computed
   isValid: () => boolean;
@@ -62,6 +63,10 @@ export const usePercentageStore = create<PercentageState>()(
         targetPercentages: DEFAULT_PERCENTAGES,
         deviationThreshold: DEVIATION_THRESHOLD,
       }).catch(() => {});
+    },
+
+    loadFromDataset: (percentages: PercentageSplit, threshold: number) => {
+      set({ targetPercentages: percentages, deviationThreshold: threshold });
     },
 
     isValid: () => {

@@ -45,10 +45,10 @@ export function PercentageSplit() {
 
   return (
     <div className={clsx(
-      'rounded-lg shadow-lg border p-6',
+      'rounded-lg shadow-lg border p-4',
       isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'
     )}>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <h2 className={clsx('text-lg font-semibold', isDark ? 'text-cyan-400' : 'text-cyan-700')}>
           Target Distribution
         </h2>
@@ -65,7 +65,7 @@ export function PercentageSplit() {
         </button>
       </div>
 
-      <div className="grid grid-cols-5 gap-4 mb-4">
+      <div className="grid grid-cols-5 gap-3 mb-3">
         {[1, 2, 3, 4, 5].map((rating) => (
           <div key={rating}>
             <label className={clsx(

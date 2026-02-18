@@ -103,6 +103,28 @@ class ApiClient {
     });
   }
 
+  // Datasets
+  listDatasets() {
+    return this.request<{ datasets: { id: number; name: string; created_at: string }[] }>('/datasets');
+  }
+
+  saveDataset(name: string, employees: any[], settings: Record<string, any>) {
+    return this.request<{ dataset: { id: number; name: string; created_at: string } }>('/datasets', {
+      method: 'POST',
+      body: JSON.stringify({ name, employees, settings }),
+    });
+  }
+
+  loadDataset(id: number) {
+    return this.request<{ dataset: { id: number; name: string; employees: any[]; settings: any; created_at: string } }>(`/datasets/${id}`);
+  }
+
+  deleteDataset(id: number) {
+    return this.request<{ message: string }>(`/datasets/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Admin
   getUsers() {
     return this.request<{ users: any[] }>('/admin/users');

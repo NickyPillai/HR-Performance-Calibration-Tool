@@ -33,6 +33,15 @@ export interface JwtPayload {
   role: 'admin' | 'user';
 }
 
+export interface DbSavedDataset {
+  id: number;
+  user_id: number;
+  name: string;
+  employees: string;
+  settings: string;
+  created_at: string;
+}
+
 export interface AuthenticatedRequest extends Request {
   user?: JwtPayload;
 }

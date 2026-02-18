@@ -3,6 +3,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { useEmployeeStore } from '../../store/useEmployeeStore';
 import { usePercentageStore } from '../../store/usePercentageStore';
 import { useThemeStore } from '../../store/useThemeStore';
+import { useDatasetStore } from '../../store/useDatasetStore';
 import { apiClient } from '../../lib/api/client';
 
 interface Props {
@@ -15,6 +16,7 @@ export function AppInitializer({ children }: Props) {
   const fetchEmployees = useEmployeeStore((s) => s.fetchEmployees);
   const fetchSettings = usePercentageStore((s) => s.fetchSettings);
   const setTheme = useThemeStore((s) => s.setTheme);
+  const fetchDatasets = useDatasetStore((s) => s.fetchDatasets);
 
   useEffect(() => {
     const init = async () => {
@@ -23,6 +25,7 @@ export function AppInitializer({ children }: Props) {
         await Promise.all([
           fetchEmployees(),
           fetchSettings(),
+          fetchDatasets(),
           apiClient.getSettings().then((settings) => {
             setTheme(settings.theme as 'dark' | 'light');
           }).catch(() => {}),
