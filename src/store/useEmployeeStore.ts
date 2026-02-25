@@ -10,7 +10,8 @@ interface EmployeeState {
   // Actions
   fetchEmployees: () => Promise<void>;
   setEmployees: (employees: Employee[]) => void;
-  addEmployee: (employee: Employee) => void;
+  addEmployee: () => Promise<void>;
+  deleteEmployee: (id: string) => void;
   updateEmployee: (id: string, updates: EmployeeUpdate) => void;
   bulkImport: (employees: ImportedEmployee[]) => void;
   toggleFreeze: (id: string) => void;
@@ -40,10 +41,34 @@ export const useEmployeeStore = create<EmployeeState>()(
       set({ employees });
     },
 
-    addEmployee: (employee: Employee) => {
+    addEmployee: async () => {
+      try {
+        const { employee } = await apiClient.addEmployee({
+          employeeId: '',
+          name: '',
+          department: '',
+          manager: '',
+          rating: 3,
+        });
+        set((state) => ({
+          employees: [employee, ...state.employees],
+        }));
+      } catch {
+        // Refetch on failure
+        get().fetchEmployees();
+      }
+    },
+
+    deleteEmployee: async (id: string) => {
+      // Optimistic update
       set((state) => ({
-        employees: [...state.employees, employee],
+        employees: state.employees.filter((emp) => emp.id !== id),
       }));
+      try {
+        await apiClient.deleteEmployee(id);
+      } catch {
+        get().fetchEmployees();
+      }
     },
 
     updateEmployee: async (id: string, updates: EmployeeUpdate) => {
@@ -62,8 +87,14 @@ export const useEmployeeStore = create<EmployeeState>()(
     },
 
     bulkImport: async (importedEmployees: ImportedEmployee[]) => {
-      const { employees } = await apiClient.bulkImportEmployees(importedEmployees);
-      set({ employees });
+      set({ isLoading: true });
+      try {
+        const { employees } = await apiClient.bulkImportEmployees(importedEmployees);
+        set({ employees, isLoading: false });
+      } catch (err) {
+        set({ isLoading: false });
+        throw err;
+      }
     },
 
     toggleFreeze: async (id: string) => {

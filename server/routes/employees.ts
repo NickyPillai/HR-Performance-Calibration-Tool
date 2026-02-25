@@ -40,10 +40,20 @@ router.post('/bulk', async (req: AuthenticatedRequest, res) => {
 
     await client.query('DELETE FROM employees WHERE user_id = $1', [userId]);
 
-    for (const emp of employees) {
+    // Batch insert for performance (avoid N individual queries over network)
+    const BATCH_SIZE = 50;
+    for (let i = 0; i < employees.length; i += BATCH_SIZE) {
+      const batch = employees.slice(i, i + BATCH_SIZE);
+      const values: unknown[] = [];
+      const placeholders: string[] = [];
+      batch.forEach((emp, idx) => {
+        const offset = idx * 7;
+        placeholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7})`);
+        values.push(userId, emp.employeeId, emp.name, emp.department, emp.manager, emp.rating, emp.isFrozen ? 1 : 0);
+      });
       await client.query(
-        'INSERT INTO employees (user_id, employee_id, name, department, manager, rating, is_frozen) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-        [userId, emp.employeeId, emp.name, emp.department, emp.manager, emp.rating, emp.isFrozen ? 1 : 0]
+        `INSERT INTO employees (user_id, employee_id, name, department, manager, rating, is_frozen) VALUES ${placeholders.join(', ')}`,
+        values
       );
     }
 
@@ -129,6 +139,41 @@ router.patch('/:id/freeze', async (req: AuthenticatedRequest, res) => {
     res.json({ employee: mapDbEmployee(result.rows[0]) });
   } catch (err) {
     console.error('Freeze employee error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/employees - add a single employee
+router.post('/', async (req: AuthenticatedRequest, res) => {
+  const { employeeId, name, department, manager, rating } = req.body;
+  const userId = req.user!.userId;
+
+  try {
+    const result = await query(
+      'INSERT INTO employees (user_id, employee_id, name, department, manager, rating, is_frozen) VALUES ($1, $2, $3, $4, $5, $6, 0) RETURNING *',
+      [userId, employeeId || '', name || '', department || '', manager || '', rating || 3]
+    );
+    res.status(201).json({ employee: mapDbEmployee(result.rows[0]) });
+  } catch (err) {
+    console.error('Add employee error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// DELETE /api/employees/:id - delete a single employee
+router.delete('/:id', async (req: AuthenticatedRequest, res) => {
+  try {
+    const result = await query(
+      'DELETE FROM employees WHERE id = $1 AND user_id = $2',
+      [req.params.id, req.user!.userId]
+    );
+    if (result.rowCount === 0) {
+      res.status(404).json({ error: 'Employee not found' });
+      return;
+    }
+    res.json({ message: 'Employee deleted' });
+  } catch (err) {
+    console.error('Delete employee error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

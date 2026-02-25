@@ -3,11 +3,17 @@ import { config } from '../config.js';
 
 const { Pool } = pg;
 
+const isServerless = !!process.env.VERCEL;
+
 const pool = new Pool({
   connectionString: config.databaseUrl,
-  ssl: config.databaseUrl.includes('supa')
+  ssl: config.databaseUrl.includes('supa') || config.databaseUrl.includes('pooler')
     ? { rejectUnauthorized: false }
     : undefined,
+  // Optimize for serverless: fewer connections, shorter idle timeout
+  max: isServerless ? 3 : 10,
+  idleTimeoutMillis: isServerless ? 10000 : 30000,
+  connectionTimeoutMillis: 10000,
 });
 
 export async function query(text: string, params?: unknown[]) {

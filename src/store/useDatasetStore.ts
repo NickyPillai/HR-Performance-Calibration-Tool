@@ -6,12 +6,14 @@ import type { DatasetSummary } from '../types/dataset';
 
 interface DatasetState {
   savedDatasets: DatasetSummary[];
+  activeDatasetId: number | null;
   activeDatasetName: string | null;
   isSaving: boolean;
   isLoading: boolean;
 
   fetchDatasets: () => Promise<void>;
   saveDataset: (name: string) => Promise<void>;
+  updateDataset: () => Promise<void>;
   loadDataset: (id: number) => Promise<void>;
   deleteDataset: (id: number) => Promise<void>;
   setActiveDatasetName: (name: string | null) => void;
@@ -20,6 +22,7 @@ interface DatasetState {
 export const useDatasetStore = create<DatasetState>()(
   (set, get) => ({
     savedDatasets: [],
+    activeDatasetId: null,
     activeDatasetName: null,
     isSaving: false,
     isLoading: false,
@@ -38,9 +41,25 @@ export const useDatasetStore = create<DatasetState>()(
       try {
         const employees = useEmployeeStore.getState().employees;
         const { targetPercentages, deviationThreshold } = usePercentageStore.getState();
-        await apiClient.saveDataset(name, employees, { targetPercentages, deviationThreshold });
+        const { dataset } = await apiClient.saveDataset(name, employees, { targetPercentages, deviationThreshold });
         await get().fetchDatasets();
-        set({ activeDatasetName: name, isSaving: false });
+        set({ activeDatasetId: dataset.id, activeDatasetName: name, isSaving: false });
+      } catch (err) {
+        set({ isSaving: false });
+        throw err;
+      }
+    },
+
+    updateDataset: async () => {
+      const { activeDatasetId, activeDatasetName } = get();
+      if (!activeDatasetId || !activeDatasetName) return;
+      set({ isSaving: true });
+      try {
+        const employees = useEmployeeStore.getState().employees;
+        const { targetPercentages, deviationThreshold } = usePercentageStore.getState();
+        await apiClient.updateDataset(activeDatasetId, activeDatasetName, employees, { targetPercentages, deviationThreshold });
+        await get().fetchDatasets();
+        set({ isSaving: false });
       } catch (err) {
         set({ isSaving: false });
         throw err;
@@ -51,12 +70,13 @@ export const useDatasetStore = create<DatasetState>()(
       set({ isLoading: true });
       try {
         const { dataset } = await apiClient.loadDataset(id);
-        useEmployeeStore.getState().setEmployees(dataset.employees);
+        // Sync employees to DB via bulk import so freeze/unfreeze works correctly
+        await useEmployeeStore.getState().bulkImport(dataset.employees);
         usePercentageStore.getState().loadFromDataset(
           dataset.settings.targetPercentages,
           dataset.settings.deviationThreshold
         );
-        set({ activeDatasetName: dataset.name, isLoading: false });
+        set({ activeDatasetId: dataset.id, activeDatasetName: dataset.name, isLoading: false });
       } catch (err) {
         set({ isLoading: false });
         throw err;
@@ -66,9 +86,8 @@ export const useDatasetStore = create<DatasetState>()(
     deleteDataset: async (id: number) => {
       try {
         await apiClient.deleteDataset(id);
-        const deleted = get().savedDatasets.find((d) => d.id === id);
-        if (deleted && deleted.name === get().activeDatasetName) {
-          set({ activeDatasetName: null });
+        if (id === get().activeDatasetId) {
+          set({ activeDatasetId: null, activeDatasetName: null });
         }
         await get().fetchDatasets();
       } catch (err) {
@@ -77,7 +96,11 @@ export const useDatasetStore = create<DatasetState>()(
     },
 
     setActiveDatasetName: (name: string | null) => {
-      set({ activeDatasetName: name });
+      if (name === null) {
+        set({ activeDatasetId: null, activeDatasetName: null });
+      } else {
+        set({ activeDatasetName: name });
+      }
     },
   })
 );

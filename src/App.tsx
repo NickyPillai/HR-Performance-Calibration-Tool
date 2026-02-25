@@ -24,8 +24,11 @@ function App() {
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const activeDatasetId = useDatasetStore((s) => s.activeDatasetId);
   const activeDatasetName = useDatasetStore((s) => s.activeDatasetName);
   const setActiveDatasetName = useDatasetStore((s) => s.setActiveDatasetName);
+  const updateDataset = useDatasetStore((s) => s.updateDataset);
+  const isSaving = useDatasetStore((s) => s.isSaving);
   const navigate = useNavigate();
   const isDark = theme === 'dark';
 
@@ -43,6 +46,33 @@ function App() {
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const hasIncompleteEmployees = () => {
+    return employees.some(
+      (emp) => !emp.employeeId.trim() || !emp.name.trim() || !emp.department.trim() || !emp.manager.trim()
+    );
+  };
+
+  const handleUpdateDataset = async () => {
+    if (hasIncompleteEmployees()) {
+      toast.error('Please fill in all required fields (Employee ID, Name, Department, Manager) for every employee before updating.');
+      return;
+    }
+    try {
+      await updateDataset();
+      toast.success(`Dataset "${activeDatasetName}" updated successfully`);
+    } catch {
+      toast.error('Failed to update dataset');
+    }
+  };
+
+  const handleSaveDataset = () => {
+    if (hasIncompleteEmployees()) {
+      toast.error('Please fill in all required fields (Employee ID, Name, Department, Manager) for every employee before saving.');
+      return;
+    }
+    setShowSaveModal(true);
   };
 
   return (
@@ -191,25 +221,45 @@ function App() {
             <EmployeeTable />
           </section>
 
-          {/* Save Button */}
-          <section className="flex justify-end">
-            <button
-              onClick={() => setShowSaveModal(true)}
-              disabled={employees.length === 0}
-              className={clsx(
-                'px-6 py-2.5 text-sm font-medium rounded-lg transition-colors shadow-lg flex items-center gap-2',
-                employees.length > 0
-                  ? 'bg-cyan-600 hover:bg-cyan-700 text-white border border-cyan-500'
-                  : isDark
-                    ? 'bg-slate-700 text-slate-500 border border-slate-600 cursor-not-allowed'
-                    : 'bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed'
-              )}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-              </svg>
-              Save Dataset
-            </button>
+          {/* Save / Update Button */}
+          <section className="flex justify-end gap-3">
+            {activeDatasetId ? (
+              <button
+                onClick={handleUpdateDataset}
+                disabled={employees.length === 0 || isSaving}
+                className={clsx(
+                  'px-6 py-2.5 text-sm font-medium rounded-lg transition-colors shadow-lg flex items-center gap-2',
+                  employees.length > 0 && !isSaving
+                    ? 'bg-cyan-600 hover:bg-cyan-700 text-white border border-cyan-500'
+                    : isDark
+                      ? 'bg-slate-700 text-slate-500 border border-slate-600 cursor-not-allowed'
+                      : 'bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed'
+                )}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                {isSaving ? 'Updating...' : 'Update Dataset'}
+              </button>
+            ) : (
+              <button
+                onClick={handleSaveDataset}
+                disabled={employees.length === 0}
+                className={clsx(
+                  'px-6 py-2.5 text-sm font-medium rounded-lg transition-colors shadow-lg flex items-center gap-2',
+                  employees.length > 0
+                    ? 'bg-cyan-600 hover:bg-cyan-700 text-white border border-cyan-500'
+                    : isDark
+                      ? 'bg-slate-700 text-slate-500 border border-slate-600 cursor-not-allowed'
+                      : 'bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed'
+                )}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                </svg>
+                Save Dataset
+              </button>
+            )}
           </section>
         </div>
       </main>

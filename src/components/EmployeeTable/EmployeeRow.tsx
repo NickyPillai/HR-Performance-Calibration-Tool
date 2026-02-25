@@ -11,6 +11,7 @@ interface EmployeeRowProps {
 
 export function EmployeeRow({ employee }: EmployeeRowProps) {
   const updateEmployee = useEmployeeStore((state) => state.updateEmployee);
+  const deleteEmployee = useEmployeeStore((state) => state.deleteEmployee);
   const toggleFreeze = useEmployeeStore((state) => state.toggleFreeze);
   const theme = useThemeStore((state) => state.theme);
   const isDark = theme === 'dark';
@@ -33,7 +34,22 @@ export function EmployeeRow({ employee }: EmployeeRowProps) {
     toggleFreeze(employee.id);
   };
 
-  const inputClass = clsx(
+  const getInputClass = (value: string) => clsx(
+    'w-full px-2 py-1 text-sm border rounded focus:outline-none',
+    employee.isFrozen
+      ? isDark
+        ? 'bg-slate-600 border-slate-500 text-slate-400 cursor-not-allowed'
+        : 'bg-gray-200 border-gray-300 text-gray-400 cursor-not-allowed'
+      : !value.trim()
+        ? isDark
+          ? 'bg-slate-700 border-red-500 text-slate-100 focus:ring-2 focus:ring-red-500'
+          : 'bg-white border-red-500 text-gray-900 focus:ring-2 focus:ring-red-500'
+        : isDark
+          ? 'bg-slate-700 border-slate-600 text-slate-100 focus:ring-2 focus:ring-cyan-500'
+          : 'bg-white border-gray-300 text-gray-900 focus:ring-2 focus:ring-cyan-500'
+  );
+
+  const selectClass = clsx(
     'w-full px-2 py-1 text-sm border rounded focus:outline-none',
     employee.isFrozen
       ? isDark
@@ -57,7 +73,8 @@ export function EmployeeRow({ employee }: EmployeeRowProps) {
           value={localData.employeeId}
           onChange={(e) => handleFieldChange('employeeId', e.target.value)}
           disabled={employee.isFrozen}
-          className={inputClass}
+          placeholder="Required"
+          className={getInputClass(localData.employeeId)}
         />
       </td>
       <td className="px-4 py-2">
@@ -66,7 +83,8 @@ export function EmployeeRow({ employee }: EmployeeRowProps) {
           value={localData.name}
           onChange={(e) => handleFieldChange('name', e.target.value)}
           disabled={employee.isFrozen}
-          className={inputClass}
+          placeholder="Required"
+          className={getInputClass(localData.name)}
         />
       </td>
       <td className="px-4 py-2">
@@ -75,7 +93,8 @@ export function EmployeeRow({ employee }: EmployeeRowProps) {
           value={localData.department}
           onChange={(e) => handleFieldChange('department', e.target.value)}
           disabled={employee.isFrozen}
-          className={inputClass}
+          placeholder="Required"
+          className={getInputClass(localData.department)}
         />
       </td>
       <td className="px-4 py-2">
@@ -84,7 +103,8 @@ export function EmployeeRow({ employee }: EmployeeRowProps) {
           value={localData.manager}
           onChange={(e) => handleFieldChange('manager', e.target.value)}
           disabled={employee.isFrozen}
-          className={inputClass}
+          placeholder="Required"
+          className={getInputClass(localData.manager)}
         />
       </td>
       <td className="px-4 py-2">
@@ -92,7 +112,7 @@ export function EmployeeRow({ employee }: EmployeeRowProps) {
           value={localData.rating}
           onChange={(e) => handleFieldChange('rating', parseInt(e.target.value) as Rating)}
           disabled={employee.isFrozen}
-          className={inputClass}
+          className={selectClass}
         >
           <option value={1}>1</option>
           <option value={2}>2</option>
@@ -102,17 +122,25 @@ export function EmployeeRow({ employee }: EmployeeRowProps) {
         </select>
       </td>
       <td className="px-4 py-2">
-        <button
-          onClick={handleToggleFreeze}
-          className={clsx(
-            'px-3 py-1 rounded text-white text-sm transition-colors font-medium',
-            employee.isFrozen
-              ? 'bg-amber-600 hover:bg-amber-700'
-              : 'bg-cyan-600 hover:bg-cyan-700'
-          )}
-        >
-          {employee.isFrozen ? 'Unfreeze' : 'Freeze'}
-        </button>
+        <div className="flex gap-1">
+          <button
+            onClick={handleToggleFreeze}
+            className={clsx(
+              'px-3 py-1 rounded text-white text-sm transition-colors font-medium',
+              employee.isFrozen
+                ? 'bg-amber-600 hover:bg-amber-700'
+                : 'bg-cyan-600 hover:bg-cyan-700'
+            )}
+          >
+            {employee.isFrozen ? 'Unfreeze' : 'Freeze'}
+          </button>
+          <button
+            onClick={() => deleteEmployee(employee.id)}
+            className="px-3 py-1 rounded text-white text-sm transition-colors font-medium bg-red-600 hover:bg-red-700"
+          >
+            Delete
+          </button>
+        </div>
       </td>
     </tr>
   );

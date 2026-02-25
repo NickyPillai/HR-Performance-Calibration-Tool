@@ -85,6 +85,19 @@ class ApiClient {
     });
   }
 
+  addEmployee(employee: { employeeId: string; name: string; department: string; manager: string; rating: number }) {
+    return this.request<{ employee: any }>('/employees', {
+      method: 'POST',
+      body: JSON.stringify(employee),
+    });
+  }
+
+  deleteEmployee(id: string) {
+    return this.request<{ message: string }>(`/employees/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   deleteAllEmployees() {
     return this.request<{ message: string }>('/employees', {
       method: 'DELETE',
@@ -117,6 +130,13 @@ class ApiClient {
 
   loadDataset(id: number) {
     return this.request<{ dataset: { id: number; name: string; employees: any[]; settings: any; created_at: string } }>(`/datasets/${id}`);
+  }
+
+  updateDataset(id: number, name: string, employees: any[], settings: Record<string, any>) {
+    return this.request<{ dataset: { id: number; name: string; created_at: string } }>(`/datasets/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ name, employees, settings }),
+    });
   }
 
   deleteDataset(id: number) {

@@ -86,6 +86,45 @@ router.get('/:id', async (req: AuthenticatedRequest, res) => {
   }
 });
 
+// PUT /api/datasets/:id - update an existing dataset
+router.put('/:id', async (req: AuthenticatedRequest, res) => {
+  const { name, employees, settings } = req.body;
+
+  if (!Array.isArray(employees) || employees.length === 0) {
+    res.status(400).json({ error: 'Employees data is required' });
+    return;
+  }
+  if (!settings) {
+    res.status(400).json({ error: 'Settings data is required' });
+    return;
+  }
+
+  try {
+    const check = await query(
+      'SELECT id FROM saved_datasets WHERE id = $1 AND user_id = $2',
+      [req.params.id, req.user!.userId]
+    );
+    if (check.rows.length === 0) {
+      res.status(404).json({ error: 'Dataset not found' });
+      return;
+    }
+
+    const result = await query(
+      'UPDATE saved_datasets SET employees = $1, settings = $2, name = COALESCE(NULLIF($3, \'\'), name) WHERE id = $4 AND user_id = $5 RETURNING id, name, created_at',
+      [JSON.stringify(employees), JSON.stringify(settings), (name || '').trim(), Number(req.params.id), req.user!.userId]
+    );
+
+    res.json({ dataset: result.rows[0] });
+  } catch (err: any) {
+    if (err.code === '23505') {
+      res.status(409).json({ error: 'A dataset with that name already exists' });
+      return;
+    }
+    console.error('Update dataset error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // DELETE /api/datasets/:id
 router.delete('/:id', async (req: AuthenticatedRequest, res) => {
   try {

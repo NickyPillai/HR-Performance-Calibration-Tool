@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useDatasetStore } from '../../store/useDatasetStore';
 import { useEmployeeStore } from '../../store/useEmployeeStore';
 import { useThemeStore } from '../../store/useThemeStore';
@@ -7,6 +6,7 @@ import clsx from 'clsx';
 
 export function DatasetSelector() {
   const savedDatasets = useDatasetStore((s) => s.savedDatasets);
+  const activeDatasetId = useDatasetStore((s) => s.activeDatasetId);
   const activeDatasetName = useDatasetStore((s) => s.activeDatasetName);
   const loadDataset = useDatasetStore((s) => s.loadDataset);
   const deleteDataset = useDatasetStore((s) => s.deleteDataset);
@@ -15,21 +15,20 @@ export function DatasetSelector() {
   const theme = useThemeStore((s) => s.theme);
   const isDark = theme === 'dark';
 
-  const [selectedId, setSelectedId] = useState<string>('');
+  const handleSelect = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    if (!value) return;
 
-  const handleLoad = async () => {
-    if (!selectedId) return;
-
-    const id = Number(selectedId);
+    const id = Number(value);
     if (employees.length > 0 && !activeDatasetName) {
       if (!confirm('Loading a dataset will replace your current unsaved data. Continue?')) {
+        e.target.value = activeDatasetId ? String(activeDatasetId) : '';
         return;
       }
     }
 
     try {
       await loadDataset(id);
-      setSelectedId('');
       toast.success('Dataset loaded successfully');
     } catch {
       toast.error('Failed to load dataset');
@@ -37,9 +36,9 @@ export function DatasetSelector() {
   };
 
   const handleDelete = async () => {
-    if (!selectedId) return;
+    if (!activeDatasetId) return;
 
-    const dataset = savedDatasets.find((d) => d.id === Number(selectedId));
+    const dataset = savedDatasets.find((d) => d.id === activeDatasetId);
     if (!dataset) return;
 
     if (!confirm(`Delete dataset "${dataset.name}"? This cannot be undone.`)) {
@@ -47,8 +46,7 @@ export function DatasetSelector() {
     }
 
     try {
-      await deleteDataset(Number(selectedId));
-      setSelectedId('');
+      await deleteDataset(activeDatasetId);
       toast.success('Dataset deleted');
     } catch {
       toast.error('Failed to delete dataset');
@@ -69,45 +67,42 @@ export function DatasetSelector() {
           Load Saved Dataset
         </h2>
 
-        <select
-          value={selectedId}
-          onChange={(e) => setSelectedId(e.target.value)}
-          className={clsx(
-            'px-3 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 min-w-[200px]',
-            isDark
-              ? 'bg-slate-700 border-slate-600 text-slate-100'
-              : 'bg-gray-50 border-gray-300 text-gray-900'
+        <div className="relative">
+          <select
+            value={activeDatasetId ? String(activeDatasetId) : ''}
+            onChange={handleSelect}
+            disabled={isLoading}
+            className={clsx(
+              'px-3 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 min-w-[200px]',
+              isDark
+                ? 'bg-slate-700 border-slate-600 text-slate-100'
+                : 'bg-gray-50 border-gray-300 text-gray-900',
+              isLoading && 'opacity-50 cursor-not-allowed'
+            )}
+          >
+            <option value="">-- Select a dataset --</option>
+            {savedDatasets.map((ds) => (
+              <option key={ds.id} value={ds.id}>
+                {ds.name} ({new Date(ds.created_at).toLocaleDateString()})
+              </option>
+            ))}
+          </select>
+          {isLoading && (
+            <div className="absolute inset-y-0 right-8 flex items-center">
+              <svg className="animate-spin h-4 w-4 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+            </div>
           )}
-        >
-          <option value="">-- Select a dataset --</option>
-          {savedDatasets.map((ds) => (
-            <option key={ds.id} value={ds.id}>
-              {ds.name} ({new Date(ds.created_at).toLocaleDateString()})
-            </option>
-          ))}
-        </select>
-
-        <button
-          onClick={handleLoad}
-          disabled={!selectedId || isLoading}
-          className={clsx(
-            'px-3 py-1.5 text-sm font-medium rounded-lg transition-colors border',
-            selectedId && !isLoading
-              ? 'bg-cyan-600 hover:bg-cyan-700 text-white border-cyan-500'
-              : isDark
-                ? 'bg-slate-700 text-slate-500 border-slate-600 cursor-not-allowed'
-                : 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed'
-          )}
-        >
-          {isLoading ? 'Loading...' : 'Load'}
-        </button>
+        </div>
 
         <button
           onClick={handleDelete}
-          disabled={!selectedId}
+          disabled={!activeDatasetId || isLoading}
           className={clsx(
             'px-3 py-1.5 text-sm font-medium rounded-lg transition-colors border',
-            selectedId
+            activeDatasetId && !isLoading
               ? 'bg-red-600 hover:bg-red-700 text-white border-red-500'
               : isDark
                 ? 'bg-slate-700 text-slate-500 border-slate-600 cursor-not-allowed'
@@ -123,6 +118,12 @@ export function DatasetSelector() {
             isDark ? 'bg-cyan-900/40 text-cyan-300 border border-cyan-700' : 'bg-cyan-50 text-cyan-700 border border-cyan-200'
           )}>
             Active: {activeDatasetName}
+          </span>
+        )}
+
+        {isLoading && (
+          <span className={clsx('text-xs font-medium', isDark ? 'text-cyan-300' : 'text-cyan-600')}>
+            Loading dataset...
           </span>
         )}
       </div>
