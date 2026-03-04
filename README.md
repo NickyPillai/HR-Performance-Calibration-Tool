@@ -1,112 +1,137 @@
-# 🚀 AI-Powered Performance Calibration Tool
-**Bridging the gap between manual appraisals and data-driven leadership.**
+# Performance Calibration Tool
 
-## 📌 The Problem
-Many HR leaders and executives operate in a "data vacuum" during appraisal cycles. Without expensive, enterprise-level HRMS platforms, there is a total **lack of visibility** into organization-wide performance trends. This leads to:
-- Significant **deviations** from pre-planned appraisal budgets/marks.
-- Unidentified bias across different departments.
-- No centralized "Eagle Eye" view to perform real-time course correction.
-
-## 🎯 Product Vision
-To provide an intuitive, high-level workspace for HR managers and leadership who lack sophisticated performance tools. This platform transforms fragmented appraisal data into a strategic dashboard, allowing for instant identification of rating inflation or deflation and facilitating immediate alignment with organizational goals.
-
-## ✨ The Solution
-A lightweight SaaS prototype designed for rapid decision-making:
-- **Eagle Eye Dashboard:** Instant visualization of all ratings against pre-set thresholds.
-- **Departmental Deep-Dives:** Identify specific teams needing course correction to maintain grading parity.
-- **Real-Time Calibration:** Update ratings on the fly and export "Audit-Ready" reports for stakeholder review.
+A lightweight SaaS prototype that gives HR managers and leadership an eagle-eye view of performance ratings across the organisation, helping identify deviations and course-correct before appraisals are finalised.
 
 ---
 
-## 🏗 Tech Stack & Architecture (High-Level)
-Built with a "Product-Led" mindset, focusing on speed-to-market and user experience:
+## Problem
 
-- **Frontend:** Next.js (React) for a fast, responsive interface.
-- **Deployment:** Vercel (Cloud Hosting) for seamless CI/CD.
-- **Data Handling:** JSON-based state management for secure, client-side data processing.
-- **AI Integration:** Leveraging LLM-driven prompting (Claude) to summarize calibration trends and suggest corrective actions.
+Most organisations lack visibility into how performance ratings are distributed across teams and departments. Without a centralised view, it's nearly impossible to spot deviations from the planned appraisal curve until it's too late. This leads to:
 
+- **Rating inflation or deflation** going unnoticed across departments
+- **Inconsistent calibration** between managers and teams
+- **No early warning system** when actual ratings drift from the planned bell curve
+- **Manual, error-prone processes** using spreadsheets that don't scale
 
+## Product Vision
+
+To provide a **simple, accessible space** for HR managers and people in leadership who do not have performance management tools or platforms at their disposal. This tool delivers an eagle-eye view of ratings and helps in course correction for all deviations — without the complexity or cost of enterprise software.
+
+## Solution
+
+A lightweight web application that enables HR teams to:
+
+- **Get an eagle-eye view** of all ratings and deviations from pre-set thresholds via an interactive bell curve
+- **Check department-wise deviations** to identify specific areas needing course correction
+- **Update ratings inline** and export reports for further action
+- **Save and manage multiple datasets** (e.g., "Engineering Q1", "Sales FY25") to track calibration over time
 
 ---
 
-## 📈 Impact & Metrics
-By implementing this calibration layer, organizations can achieve:
-- **100% Visibility:** Total transparency into appraisal deviations across the entire hierarchy.
-- **Reduced Merit Blur:** A projected **25% improvement** in rating accuracy by aligning manager inputs with pre-set organizational curves.
-- **Operational Efficiency:** Slashed the time spent on manual "Report Consolidation" from days to minutes.
+## Key Features
+
+| Feature | What it does |
+|---------|-------------|
+| **Excel/CSV Upload** | Drag-and-drop employee data from existing spreadsheets — no manual entry needed |
+| **Bell Curve Visualisation** | Interactive chart comparing actual vs. target rating distribution with deviation highlights |
+| **Department & Manager Filters** | Drill down into specific teams to spot localised deviations |
+| **Inline Editing** | Update individual ratings directly in the table; freeze rows to lock finalised ratings |
+| **Dataset Management** | Save, load, update, and delete named datasets for different review cycles or business units |
+| **Deviation Alerts** | Configurable thresholds that flag when any rating bucket drifts too far from target |
+| **Dark Mode** | Easy on the eyes for those long calibration sessions |
+| **Role-Based Access** | Admin and user roles to control who can manage accounts vs. who can calibrate |
 
 ---
-**Author:** Nicky Pillai | Product Manager
 
+## Tech Stack & Architecture
 
+> _A high-level overview — no deep technical knowledge required._
 
-# React + TypeScript + Vite
+The tool is built as a **modern web application** with two main parts:
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+┌─────────────────────────────────────────────────┐
+│                   User's Browser                │
+│                                                 │
+│   React Frontend (what you see and interact     │
+│   with — tables, charts, buttons, forms)        │
+└──────────────────┬──────────────────────────────┘
+                   │  Talks to each other
+                   │  over the internet
+┌──────────────────▼──────────────────────────────┐
+│               Backend Server                    │
+│                                                 │
+│   Express API (handles logic — authentication,  │
+│   saving data, loading datasets, permissions)   │
+└──────────────────┬──────────────────────────────┘
+                   │
+┌──────────────────▼──────────────────────────────┐
+│               Database (Supabase)               │
+│                                                 │
+│   PostgreSQL (stores all employee data,         │
+│   user accounts, saved datasets, settings)      │
+└─────────────────────────────────────────────────┘
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+| Layer | Technology | Why |
+|-------|-----------|-----|
+| **User Interface** | React + Tailwind CSS | Fast, responsive UI that works on any device |
+| **Charts** | Recharts | Clean, interactive bell curve visualisations |
+| **Backend** | Node.js + Express | Lightweight server handling all business logic |
+| **Database** | PostgreSQL (Supabase) | Reliable, scalable data storage in the cloud |
+| **Authentication** | JWT tokens | Secure login without third-party dependencies |
+| **Hosting** | Vercel | One-click deployment with zero server management |
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+**In plain terms:** The user opens the app in a browser, uploads a spreadsheet, and the system stores the data securely in a cloud database. All the chart calculations, filtering, and deviation detection happen in real time as users interact with the tool.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+---
+
+## Impact & Metrics
+
+### Efficiency Gains
+
+| Metric | Before | After |
+|--------|--------|-------|
+| **Time to identify rating deviations** | Hours of manual spreadsheet analysis | Seconds — visible immediately on upload |
+| **Calibration cycle turnaround** | Multiple rounds of emails and spreadsheet exchanges | Single session with real-time editing |
+| **Cross-department visibility** | Siloed, manager-level only | Organisation-wide with one-click filters |
+
+### Key Success Metrics
+
+- **Reduction in calibration cycle time** — Target: 60-70% reduction by eliminating manual spreadsheet reviews
+- **Deviation detection rate** — 100% of rating buckets exceeding threshold are flagged automatically (vs. often missed manually)
+- **User adoption** — Number of datasets saved and calibration sessions completed per review cycle
+- **Data accuracy** — Reduction in post-calibration corrections due to earlier visibility into distribution issues
+
+### Qualitative Impact
+
+- **Democratises access** to performance analytics for teams without enterprise HR platforms
+- **Reduces bias** by making rating distributions transparent across departments
+- **Empowers HR** to have data-backed conversations with managers about rating adjustments
+- **Supports compliance** by maintaining auditable snapshots of calibration states across review cycles
+
+---
+
+### Sample Data
+
+Use the **"Download Sample Template"** button in the app to get a pre-formatted Excel file, fill it with your data, and upload.
+
+---
+
+## Deployment
+
+The app is configured for **one-click deployment on Vercel**. Connect your repository, set environment variables, and deploy — no server management required.
+
+---
+
+## Roadmap 
+
+- Goal and Performance cycle setting ability
+- Email notifications when deviations exceed thresholds
+- Historical trend analysis across multiple review cycles
+- Integration with HRIS platforms (BambooHR, Workday, etc.)
+- Team-level drill-down with manager self-service views
+
+---
+
+*Built as a lightweight prototype to validate the need for accessible performance calibration tools in organisations of all sizes.*
